@@ -1,11 +1,12 @@
 import React from "react";
 import { useForm } from "react-hook-form";
-
+import { toast } from "react-toastify";
+import { Link,useNavigate} from "react-router-dom";
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as Yup from 'yup'
+import {useUser} from '../../hooks/UsersContext'
 
-
-
+import {Button, ErrorMessage} from "../../components";
 import LoginImg from '../../assets/hamburguer-login.svg'
 import Logo from '../../assets/login-image.svg'
 import api from '../../services/api';
@@ -16,13 +17,15 @@ import {
     ContainerItens,
     Label,
     Input,
-    Button,
     SignInLink,
-    ErrorMessage
+   
 
 
 } from './styles'
-function Login() {
+export function Login() {
+    const navigate = useNavigate()
+    const {putUserData} = useUser()
+    
     const schema = Yup.object().shape({
         email: Yup.string().email("Digite um e-mail válido").required("O e-mail é obrigatório"),
         password: Yup.string().required("A senha é obrigatória").min(6, 'A senha deve ter pelo menos 6 caracteres'),
@@ -32,12 +35,37 @@ function Login() {
     });
 
     const onSubmit = async clientData => {
-        console.log(clientData);
-        const response = await api.post('sessions', {
-            email: clientData.email,
-            password: clientData.password
-        })
-        console.log(response);
+        
+        const {data} = await toast.promise( 
+            api.post('sessions', {
+                email: clientData.email,
+                password: clientData.password
+            }),{
+                pending: 'Verificando seus dados ⏱️',
+                success: 'Seja bem vindo (a) 👌',
+                error: 'Verifique seu e-mail e senha 🤯'
+            })
+        
+        
+        
+        
+        
+       
+
+            putUserData(data)
+            
+           
+            setTimeout(()=>{
+                if(data.admin){
+                    navigate('/pedidos')
+                }else{
+                    navigate('/')
+                }
+               
+            },1000)
+
+            
+            
     };
 
     return (
@@ -57,14 +85,15 @@ function Login() {
                         error={errors.password?.message}
                     />
                     <ErrorMessage>{errors.password?.message}</ErrorMessage>
-                    <Button type="submit">Sign In</Button>
+                    <Button type="submit" style={{ marginTop: 10, marginBottom: 10 }}>
+                        Sign In</Button>
                 </form>
                 <SignInLink>
-                    Não possui conta ? <a>SignUp</a>
+                    Não possui conta ? <Link style={{color:'white'}} to="/cadastro">SignUp</Link>
                 </SignInLink>
             </ContainerItens>
         </Container>
     )
 }
 
-export default Login
+
